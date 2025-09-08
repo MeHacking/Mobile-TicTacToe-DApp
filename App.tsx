@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Pressable, ScrollView, Modal } from 'react-native';
+import { StyleSheet, Text, View, Pressable, ScrollView, Modal, Image } from 'react-native';
 import { WalletConnectModal, useWalletConnectModal } from '@walletconnect/modal-react-native';
 import { ethers } from 'ethers';
 import { useEffect, useMemo } from 'react';
@@ -67,6 +67,11 @@ export default function App() {
       <Pressable onPress={handleButtonPress} style={styles.pressableMargin}>
         <Text style={styles.buttonText}>{isConnected ? 'DISCONNECT' : 'CONNECT'}</Text>
       </Pressable>
+
+      {!isConnected && (
+        <View style={styles.container}>
+          <Image source={require('./assets/TicTacToe.png')} style={styles.image} />
+        </View>)}
 
       {isConnected && (
         <GameList
@@ -193,5 +198,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-  }
+  },
+  image: {
+    width: 300,
+    height: 300,
+    alignItems: 'center',
+    resizeMode: 'contain',
+    marginTop: 20,
+  },
 });
