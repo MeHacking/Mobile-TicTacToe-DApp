@@ -28,8 +28,8 @@ export default function App() {
   const [showRestOfApp, setShowRestOfApp] = useState(false);
 
   useEffect(() => {
-    if (isConnected) {
-      provider?.disconnect(); // briše prethodnu sesiju (trebalo bi barem)
+    if (provider) {
+      provider.disconnect(); // briše prethodnu sesiju (trebalo bi barem)
     }
   }, []);
 
@@ -62,39 +62,43 @@ export default function App() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.header}>Welcome to TicTacToe Mobile DApp!</Text>
-      <Text>{isConnected ? `CONNECTED: ${address}` : 'No wallet connected'}</Text>
+      <Text style={styles.header}>TicTacToe Mobile DApp</Text>
+      <Text style={styles.text}>{isConnected ? `CONNECTED: ${address}` : 'No wallet connected'}</Text>
       <Pressable onPress={handleButtonPress} style={styles.pressableMargin}>
         <Text style={styles.buttonText}>{isConnected ? 'DISCONNECT' : 'CONNECT'}</Text>
       </Pressable>
 
-      <GameList
-        provider={rpcProvider}
-        signerProvider={signerProvider}
-        account={address}
-        tictactoeFactoryAddress={tictactoeFactoryAddress}
-      />
+      {isConnected && (
+        <GameList
+          provider={rpcProvider}
+          signerProvider={signerProvider}
+          account={address}
+          tictactoeFactoryAddress={tictactoeFactoryAddress}
+        />
+      )}
 
       {isConnected && (
         <>
-          <Text style={styles.header}>Create a new game</Text>
-          <Pressable onPress={() => setShowCreateGameModal(true)} style={styles.pressableMargin}>
+          <Text style={styles.titleNewGame}>Create A New Game</Text>
+          <Pressable onPress={() => setShowCreateGameModal(true)} style={styles.buttonNewGame}>
             <Text style={styles.buttonText}>NEW GAME</Text>
           </Pressable>
         </>)}
       {showCreateGameModal && (
         <Modal
-          animationType="slide"
+          animationType="fade"
           transparent={true}
           visible={showCreateGameModal}
           onRequestClose={() => setShowCreateGameModal(false)}
         >
-          <CreateGameModal
-            provider={signerProvider}
-            account={address}
-            tictactoeFactoryAddress={tictactoeFactoryAddress}
-            onClose={() => setShowCreateGameModal(false)}
-          />
+          <View style={styles.overlay}>
+            <CreateGameModal
+              provider={signerProvider}
+              account={address}
+              tictactoeFactoryAddress={tictactoeFactoryAddress}
+              onClose={() => setShowCreateGameModal(false)}
+            />
+          </View>
         </Modal>
       )}
 
@@ -145,7 +149,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   header: {
-    fontSize: 18,
+    fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 16,
     textAlign: 'center',
@@ -164,4 +168,30 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
+  buttonNewGame: {
+    margin: 'auto',
+    width: '60%',
+    alignItems: 'center',
+    marginTop: 16,
+    backgroundColor: '#c41fe2',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  titleNewGame: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  text: {
+    margin: 'auto',
+    alignItems: 'center',
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  }
 });
