@@ -60,6 +60,7 @@ const CreateGameModal = ({ onClose, provider, account, tictactoeFactoryAddress }
 
 const styles = StyleSheet.create({
   modalContainer: {
+    minWidth: 300,
     padding: 20,
     backgroundColor: '#fff',
     borderRadius: 10,
@@ -71,6 +72,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   input: {
+    minWidth: 150,
     width: '80%',
     borderWidth: 1,
     borderColor: '#ccc',
@@ -79,6 +81,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   button: {
+    minWidth: 150,
     width: '80%',
     backgroundColor: '#4CAF50',
     padding: 12,
