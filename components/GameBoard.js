@@ -3,8 +3,9 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { ethers } from "ethers";
 import TicTacToeGameABI from './contracts/TicTacToeGame.json';
 
-const GameBoard = ({ gameAddress, provider, account }) => {
-  const [contract, setContract] = useState(null);
+const GameBoard = ({ gameAddress, provider, signerProvider, account }) => {
+  const [readContract, setReadContract] = useState(null);
+  const [writeContract, setWriteContract] = useState(null);
   const [board, setBoard] = useState([
     ["", "", ""],
     ["", "", ""],
@@ -18,16 +19,18 @@ const GameBoard = ({ gameAddress, provider, account }) => {
 
   // Inicijalizacija kontrakta
   useEffect(() => {
-    if (!provider || !account) return;
+    if (!provider || !signerProvider || !account) return;
 
-    const signer = provider.getSigner();
-    const contractInstance = new ethers.Contract(gameAddress, TicTacToeGameABI.abi, signer);
-    setContract(contractInstance);
+    const readInstance = new ethers.Contract(gameAddress, TicTacToeGameABI.abi, provider);
+    const writeInstance = new ethers.Contract(gameAddress, TicTacToeGameABI.abi, signerProvider.getSigner());
 
-    loadGameData(contractInstance, account);
-  }, [gameAddress, provider, account]);
+    setReadContract(readInstance);
+    setWriteContract(writeInstance);
 
-  const loadGameData = useCallback(async (contractInstance = contract, currentAccount = account) => {
+    loadGameData(readInstance, account);
+  }, [gameAddress, provider, signerProvider, account]);
+
+  const loadGameData = useCallback(async (contractInstance = readContract, currentAccount = account) => {
     if (!contractInstance || !currentAccount) return;
 
     try {
@@ -56,10 +59,10 @@ const GameBoard = ({ gameAddress, provider, account }) => {
       console.error("Greška pri učitavanju podataka:", error);
       Alert.alert("Error", "Greška pri učitavanju podataka.");
     }
-  }, [contract, account]);
+  }, [readContract, account]);
 
   const handleCellPress = async (row, col) => {
-    if (!isPlayerTurn || gameOver || !contract) return;
+    if (!isPlayerTurn || gameOver || !writeContract) return;
     if (board[row][col] !== "") return;
 
     const updatedBoard = board.map((r) => [...r]);
@@ -67,7 +70,7 @@ const GameBoard = ({ gameAddress, provider, account }) => {
     setBoard(updatedBoard);
 
     try {
-      const tx = await contract.makeMove(row, col);
+      const tx = await writeContract.makeMove(row, col);
       await tx.wait();
       await loadGameData();
     } catch (err) {

@@ -1,12 +1,10 @@
-import { StyleSheet, Text, View, Pressable } from 'react-native';
+import { StyleSheet, Text, View, Pressable, ScrollView } from 'react-native';
 import { WalletConnectModal, useWalletConnectModal } from '@walletconnect/modal-react-native';
-
-import MyGames from './components/MyGames';
-import CreateGameModal from './components/CreateGameModal';
-import GameBoard from './components/GameBoard';
-import GameList from './components/GameList';
 import { ethers } from 'ethers';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
+
+import GameList from './components/GameList';
+import MyGames from './components/MyGames';
 
 const projectId = 'c79c9f7f677758f070b5468dcf16fdef';
 const tictactoeFactoryAddress = "0x5130c51655CEA7120C5D9DcD70B41B11228961B7";
@@ -19,72 +17,95 @@ const providerMetadata = {
   redirect: {
     native: 'exp://',
     universal: 'https://tictactoe-game.com',
-  }, 
+  },
 };
 
 export default function App() {
   const { open, isConnected, address, provider } = useWalletConnectModal();
 
-  const ethersProvider = provider ? new ethers.providers.Web3Provider(provider) : null;
-  //const ethersProvider = new ethers.providers.JsonRpcProvider('https://sepolia.infura.io/v3/8e51829c693a42819c27393d4e0ff583');
-  
+  // 🔑 Signer provider (za transakcije)
+  const signerProvider = useMemo(() => {
+    if (!provider) return null;
+    return new ethers.providers.Web3Provider(provider);
+  }, [provider]);
+
+  // 🔑 RPC provider (uvek stabilan za čitanje podataka)
+  const rpcProvider = useMemo(() => {
+    return new ethers.providers.JsonRpcProvider(
+      'https://sepolia.infura.io/v3/8e51829c693a42819c27393d4e0ff583'
+    );
+  }, []);
+
   const handleButtonPress = async () => {
     if (isConnected) {
       return provider?.disconnect();
     }
     return open();
-  }
+  };
 
- useEffect(() => {
+  useEffect(() => {
     if (provider && isConnected) {
       console.log('Wallet connected successfully');
     }
   }, [provider, isConnected]);
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <Text style={styles.header}>Welcome to TicTacToe Mobile DApp!</Text>
-      <Text>{isConnected ? `Connected: ${address}` : 'No wallet connected'}</Text>
+      <Text>{isConnected ? `CONNECTED: ${address}` : 'No wallet connected'}</Text>
       <Pressable onPress={handleButtonPress} style={styles.pressableMargin}>
         <Text style={styles.buttonText}>{isConnected ? 'DISCONNECT' : 'CONNECT'}</Text>
       </Pressable>
-      <GameList provider={ethersProvider} account={address} tictactoeFactoryAddress={tictactoeFactoryAddress}/>
+
+      <GameList
+        provider={rpcProvider} // čitanje ide preko Infura
+        signerProvider={signerProvider} // pisanje ide preko WalletConnect signera
+        account={address}
+        tictactoeFactoryAddress={tictactoeFactoryAddress}
+      />
+
+      <MyGames
+      provider={rpcProvider}
+      account={address}
+      tictactoeFactoryAddress={tictactoeFactoryAddress}
+      />
+
       <WalletConnectModal
-  explorerRecommendedWalletIds={[
-    'c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96',
-  ]}
-  explorerExcludedWalletIds="ALL"
-  projectId={projectId}
-  providerMetadata={providerMetadata}
-  sessionParams={{
-    namespaces: {
-      eip155: {
-        methods: [
-          'eth_sendTransaction',
-          'eth_signTransaction',
-          'eth_sign',
-          'personal_sign',
-          'eth_signTypedData',
-        ],
-        chains: ['eip155:11155111'], // Sepolia testnet
-        events: ['chainChanged', 'accountsChanged'],
-        rpcMap: {
-          11155111: 'https://sepolia.infura.io/v3/8e51829c693a42819c27393d4e0ff583',
-        },
-      },
-    },
-  }}
-/>
-    </View>
+        explorerRecommendedWalletIds={[
+          'c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96',
+        ]}
+        explorerExcludedWalletIds="ALL"
+        projectId={projectId}
+        providerMetadata={providerMetadata}
+        sessionParams={{
+          namespaces: {
+            eip155: {
+              methods: [
+                'eth_sendTransaction',
+                'eth_signTransaction',
+                'eth_sign',
+                'personal_sign',
+                'eth_signTypedData',
+              ],
+              chains: ['eip155:11155111'], // Sepolia testnet
+              events: ['chainChanged', 'accountsChanged'],
+              rpcMap: {
+                11155111: 'https://sepolia.infura.io/v3/8e51829c693a42819c27393d4e0ff583',
+              },
+            },
+          },
+        }}
+      />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    marginTop: 30,
+    marginBottom: 60,
     flex: 1,
     backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
     padding: 20,
   },
   header: {
@@ -94,6 +115,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   pressableMargin: {
+    margin: 'auto',
+    width: '60%',
+    alignItems: 'center',
     marginTop: 16,
     backgroundColor: '#007AFF',
     paddingHorizontal: 20,

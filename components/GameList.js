@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import { ethers } from 'ethers';
 import TicTacToeFactoryABI from './contracts/TicTacToeFactory.json';
 import TicTacToeGameABI from './contracts/TicTacToeGame.json';
 import GameBoard from './GameBoard';
 
-const GameList = ({ provider, account, tictactoeFactoryAddress }) => {
+const GameList = ({ provider, signerProvider, account, tictactoeFactoryAddress }) => {
   const [games, setGames] = useState([]);
   const [showGameBoard, setShowGameBoard] = useState(false);
   const [selectedGameAddress, setSelectedGameAddress] = useState(null);
@@ -79,13 +79,13 @@ const GameList = ({ provider, account, tictactoeFactoryAddress }) => {
   }, [provider, account, tictactoeFactoryAddress]);
 
   const joinGame = async (gameAddress, stake) => {
-    if (!provider || !account) {
+    if (!signerProvider || !account) {
       Alert.alert("Error", "Wallet is not connected.");
       return;
     }
 
     try {
-      const signer = provider.getSigner();
+      const signer = signerProvider.getSigner();
       const gameContract = new ethers.Contract(gameAddress, TicTacToeGameABI.abi, signer);
       const valueInWei = ethers.utils.parseEther(stake);
 
@@ -116,7 +116,8 @@ const GameList = ({ provider, account, tictactoeFactoryAddress }) => {
           <View>
             <GameBoard
               gameAddress={item.address}
-              provider={provider}
+              provider={provider}          // za čitanje
+              signerProvider={signerProvider} // za pisanje
               account={account}
               onClose={() => {
                 setSelectedGameAddress(null);
@@ -168,15 +169,19 @@ const GameList = ({ provider, account, tictactoeFactoryAddress }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Available Games:</Text>
-      {games.length === 0 ? (
+      {isLoading ? (
+        <Text style={styles.loading}>Loading games...</Text>
+      ) : games.length === 0 ? (
         <Text>No games found.</Text>
       ) : (
-        <FlatList
-          data={games}
-          keyExtractor={(item) => item.address}
-          renderItem={renderGameItem}
-          style={styles.list}
-        />
+            <View>
+              <FlatList
+                data={games}
+                keyExtractor={(item) => item.address}
+                renderItem={renderGameItem}
+                style={styles.list}
+              />
+            </View>
       )}
     </View>
   );
@@ -184,7 +189,7 @@ const GameList = ({ provider, account, tictactoeFactoryAddress }) => {
 
 const styles = StyleSheet.create({
   container: { padding: 15 },
-  title: { fontSize: 20, marginBottom: 10, fontWeight: 'bold' },
+  title: { fontSize: 20, marginBottom: 10, fontWeight: 'bold', alignContent: 'center', margin: 'auto' },
   list: { marginTop: 10 },
   gameItem: { marginBottom: 15, padding: 10, backgroundColor: '#f1f1f1', borderRadius: 8 },
   gameInfo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -195,6 +200,7 @@ const styles = StyleSheet.create({
   playButton: { backgroundColor: '#4CAF50' },
   closeButton: { backgroundColor: '#f44336', marginTop: 10 },
   buttonText: { color: '#fff' },
+  loading: { margin: 'auto' },
 });
 
 export default GameList;
